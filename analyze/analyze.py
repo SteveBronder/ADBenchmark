@@ -10,11 +10,11 @@ libpath = '../build/benchmark'
 datapath = '../docs/data'
 
 # List of library names
-libs = ['adept', 'adolc', 'baseline', 'cppad', 'fastad', 'sacado', 'stan']
+libs = ['fastad', 'stan', 'adept', 'baseline', 'cppad', 'sacado']
 
 # List of test names
 tests = ['log_sum_exp', 'matrix_product', 'normal_log_pdf', 'prod', 'prod_iter',
-         'regression', 'stochastic_volatility', 'sum', 'sum_iter']
+          'regression', 'stochastic_volatility', 'sum', 'sum_iter']
 
 # Make plot font size bigger
 plt.rcParams["font.size"] = "12"
@@ -62,7 +62,11 @@ def run(testname):
         data = io.StringIO(check_output(args).decode("utf-8"))
         df_lib = pd.read_csv(data, sep=',')
         df_lib.set_index('N', inplace=True)
-        df[lib] = df_lib['real_time']
+        if lib == 'stan' and df_lib['name'].str.contains('varmat').any():
+          df['stan'] = df_lib[df_lib['name'].str.contains('BM_stan<')]['cpu_time']
+          df['stan_varmat'] = df_lib[df_lib['name'].str.contains('BM_stan_varmat')]['cpu_time']
+        else:
+          df[lib] = df_lib['cpu_time']
 
         # change back to current working directory
         os.chdir(cur_path)

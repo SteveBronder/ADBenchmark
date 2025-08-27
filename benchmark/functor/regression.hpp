@@ -46,6 +46,16 @@ struct RegressionFuncBase: FuncBase
         return -0.5 * z_sq - y.size() * log(sigma);
     }
 
+        template <class T, class MType, class SType>
+    auto normal_log_density_scalar(const T& y,
+                            const MType& mu, 
+                            const SType& sigma) const 
+    {
+        using std::log;
+        auto z_sq = sqrt((y - mu) * (y - mu)) / (sigma * sigma);
+        return -0.5 * z_sq - log(sigma);
+    }
+
     // Use FastAD as reference
     void derivative(Eigen::VectorXd& x,
                     Eigen::VectorXd& grad) const

@@ -15,6 +15,15 @@ struct NormalLogPdfFuncBase: FuncBase
     }
 
     template <typename T>
+    T normal_log_density(const T& y,
+                         const T& mu, 
+                         const T& sigma) const 
+    {
+        T z_sq = (y.array() - mu).matrix().squaredNorm() / (sigma * sigma);
+        return -0.5 * z_sq - (y.size() * log(sigma));
+    }
+
+    template <typename T>
     T normal_log_density(const Eigen::Matrix<T, Eigen::Dynamic, 1>& y,
                          const T& mu, 
                          const T& sigma) const 

@@ -16,21 +16,19 @@ void BM_fastad(benchmark::State& state)
     f.fill(x);
     Eigen::VectorXd grad_fx(x.size());
 
-    ad::VarView<double, ad::vec> x_ad(x.data(), 
-                                      grad_fx.data(), 
-                                      x.size());
-
-    auto expr = f(x_ad);
-
-    auto size_pack = expr.bind_cache_size();
-    Eigen::VectorXd val_buf(size_pack(0));
-    Eigen::VectorXd adj_buf(size_pack(1));
-    expr.bind_cache({val_buf.data(), adj_buf.data()});
 
     state.counters["N"] = x.size();
 
     for (auto _ : state) {
         grad_fx.setZero();
+        ad::VarView<double, ad::vec> x_ad(x.data(), 
+                                          grad_fx.data(), 
+                                          x.size());
+        auto expr = f(x_ad);
+        auto size_pack = expr.bind_cache_size();
+        Eigen::VectorXd val_buf(size_pack(0));
+        Eigen::VectorXd adj_buf(size_pack(1));
+        expr.bind_cache({val_buf.data(), adj_buf.data()});
         fx = ad::autodiff(expr);
     }
 

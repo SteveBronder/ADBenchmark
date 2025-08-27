@@ -1,6 +1,6 @@
 #include <array>
 #include <benchmark/benchmark.h>
-#include <Sacado_No_Kokkos.hpp>
+#include <Sacado.hpp>
 #include <util/check_gradient.hpp>
 
 namespace adb {

@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -e
 mkdir -p lib
 cd lib
 
@@ -10,17 +10,18 @@ cppad="cppad"
 sacado="Trilinos"
 stan="stan-dev-math"
 fastad="FastAD"
-
+mkdir -p deps
+cd deps
 # setup GBench
 if [ ! -d "$gbench" ]; then
-    git clone https://github.com/google/benchmark.git $gbench
-    git clone https://github.com/google/googletest.git $gbench/googletest
+    git clone https://github.com/google/benchmark.git $gbench 
+    git clone https://github.com/google/googletest.git $gbench/googletest 
     cd benchmark
     cmake -E make_directory "build"
     cmake -E chdir "build" cmake \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=. \
-        -DCMAKE_CXX_COMPILER="g++-10" \
+        -DCMAKE_CXX_COMPILER="clang++" \
         -DBENCHMARK_ENABLE_GTEST_TESTS=OFF \
         ../
     cmake --build "build" --config Release
@@ -47,7 +48,7 @@ if [ ! -d "$adolc" ]; then
     cd $adolc
     mkdir -p build
     autoreconf -fi
-    CC=gcc-10 CXX=g++-10 ./configure \
+    CC=clang CXX=clang++ ./configure \
         --prefix=$PWD/build \
         --exec_prefix=$PWD/build \
         --with-cflags="-O3 -march=native" \
@@ -59,13 +60,13 @@ fi
 
 # setup CppAD
 if [ ! -d "$cppad" ]; then
-    git clone --depth 1 --branch 20200000.3 https://github.com/coin-or/CppAD.git $cppad
+    git clone --depth 1 --branch 20250000.2 https://github.com/coin-or/CppAD.git $cppad
     cd $cppad
     mkdir -p build
     cd build
     cmake .. \
-        -DCMAKE_C_COMPILER="gcc-10" \
-        -DCMAKE_CXX_COMPILER="g++-10" \
+        -DCMAKE_C_COMPILER="clang" \
+        -DCMAKE_CXX_COMPILER="clang++" \
         -Dcppad_prefix="." \
         -DCMAKE_MACOSX_RPATH=1
     make -j6
@@ -75,30 +76,33 @@ fi
 
 # setup Sacado
 if [ ! -d "$sacado" ]; then
-    git clone --depth 1 --branch trilinos-release-13-0-0 https://github.com/trilinos/Trilinos.git
+    git clone --depth 1 --branch trilinos-release-16-1-0 https://github.com/trilinos/Trilinos.git
     cd Trilinos
-    mkdir -p build
+    export LLVM_PREFIX="$(brew --prefix llvm)"
+    cmake -S . -B build \
+      -DCMAKE_C_COMPILER="$LLVM_PREFIX/bin/clang" \
+      -DCMAKE_CXX_COMPILER="$LLVM_PREFIX/bin/clang++" \
+      -DCMAKE_OSX_SYSROOT="$(xcrun --show-sdk-path)" \
+      -DTrilinos_GENERATE_REPO_VERSION_FILE=OFF \
+      -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON \
+      -DBUILD_SHARED_LIBS=ON \
+      -DTrilinos_ENABLE_Kokkos=OFF \
+      -DTrilinos_ENABLE_Fortran=OFF \
+      -DTrilinos_ENABLE_Sacado=ON \
+      -DTrilinos_ENABLE_TESTS=OFF \
+      -DCMAKE_INSTALL_PREFIX="."
+    cmake --build build -j
     cd build
-    cmake \
-        -DCMAKE_C_COMPILER="gcc-10" \
-        -DCMAKE_CXX_COMPILER="g++-10" \
-        -DTrilinos_GENERATE_REPO_VERSION_FILE=OFF \
-        -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON \
-        -DBUILD_SHARED_LIBS=ON \
-        -DTrilinos_ENABLE_Fortran=OFF \
-        -DTrilinos_ENABLE_Sacado=ON \
-        -DTrilinos_ENABLE_TESTS=OFF \
-        -DCMAKE_INSTALL_PREFIX="." \
-        ..
     make -j6 install
     cd ../../ # back in lib
 fi
 
 # setup STAN
 if [ ! -d "$stan" ]; then
-    git clone --depth 1 --branch v3.3.0 https://github.com/stan-dev/math.git $stan
+    git clone --depth 1 --branch v5.1.0-rc4 https://github.com/stan-dev/math.git $stan
     cd $stan
-    echo "CXX=g++-10" > make/local
+    echo "CXX=clang++" > make/local
+    echo "CXXFLAGS+= -O3 -march=native -mtune=native -flto" >> make/local
     make -j4 -f make/standalone math-libs
     cd ../ # back in lib
 fi

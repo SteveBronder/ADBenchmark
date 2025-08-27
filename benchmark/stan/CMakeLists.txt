@@ -17,6 +17,7 @@ message(STATUS "Found TBB lib at: ${TBB_LIB}")
 function(add_stan_executable name)
     set(exec "stan_${name}")
     add_executable(${exec} "${name}.cpp")
+    target_compile_options(${exec} PRIVATE -O3 -march=native -mtune=native  -ftemplate-backtrace-limit=0)
     target_compile_definitions(${exec} PRIVATE
         -D_REENTRANT)
     target_compile_options(${exec} PRIVATE
@@ -24,9 +25,9 @@ function(add_stan_executable name)
     target_include_directories(${exec} PRIVATE
         ${ADBENCH_INCLUDE_DIR}
         ${PROJECT_SOURCE_DIR}/lib/stan-dev-math
-        ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/tbb_2019_U8/include
-        ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/boost_1.72.0
-        ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/sundials_5.2.0/include)
+        ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/tbb_2020.3/include
+        ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/boost_1.87.0
+        ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/sundials_6.1.1/include)
     target_link_libraries(${exec}
         Eigen3::Eigen
         FastAD::FastAD

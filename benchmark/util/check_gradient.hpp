@@ -8,9 +8,15 @@ inline void check_gradient(const Eigen::VectorXd& actual,
                            const std::string& name)
 {
     auto diff = (actual.array() - expected.array()).abs();
-    if ((actual.array() != expected.array()).any()) {
-        std::cerr << "WARNING (" << name << ") MAX ABS ERROR PROP: " 
-                  << (diff / expected.array()).maxCoeff() << std::endl;
+    if ((diff > 1e-8).any()) {
+        std::cerr << "WARNING (" << name << ") MAX ABS ERROR PROP: " ;
+        for (int i = 0; i < diff.size(); ++i) {
+            if (diff(i) > 1e-10) {
+                std::cerr << " index " << i << " -- " << diff(i) << " -- " << " ("
+                          << actual(i) << " vs " << expected(i) << "),\n";
+                          break;
+            }
+        }
     }
 }
 
