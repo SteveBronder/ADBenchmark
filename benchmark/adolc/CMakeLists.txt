@@ -9,14 +9,10 @@ function(add_adolc_executable name)
       Eigen3::Eigen
       fastad::fastad
       adolc::adolc            # include+link dirs and lib(s) from deps.cmake
-      benchmark::benchmark
-      benchmark::benchmark_main
+            benchmark::benchmark_main
+
       Threads::Threads
   )
-  add_custom_command(TARGET ${exec} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${CMAKE_CURRENT_SOURCE_DIR}/.adolcrc
-          $<TARGET_FILE_DIR:${exec}>/.adolcrc)
 endfunction()
 
 add_adolc_executable("log_sum_exp")
