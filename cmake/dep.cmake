@@ -31,7 +31,7 @@ endif()
 # Versions (edit as needed)
 set(ADEPT_VERSION   "2.0.8")
 set(ADOLC_VERSION   "2.7.2")
-set(CPPAD_VERSION   "20250000.2")
+set(CPPAD_VERSION   "4546cd500d2e32a707f826cd44d1c65d1912b04e")
 set(TRILINOS_TAG    "trilinos-release-16-1-0")
 
 # Options to toggle deps
@@ -138,6 +138,7 @@ endif()
 if(DEP_ENABLE_CPPAD)
   # Try system package first
     message(STATUS "Fetching CppAD ${CPPAD_VERSION}")
+    set(cppad_static_lib ON CACHE BOOL "" FORCE)
     FetchContent_Declare(cppad
       GIT_REPOSITORY https://github.com/coin-or/CppAD.git
       GIT_TAG        ${CPPAD_VERSION}
