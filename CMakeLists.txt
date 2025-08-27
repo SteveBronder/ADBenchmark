@@ -6,6 +6,8 @@ project("ADBenchmark"
 
 set(ADBENCH_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/benchmark)
 set(CMAKE_CXX_STANDARD 17)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
 add_compile_options(-O3 -march=native)
 cmake_policy(SET CMP0069 NEW)
 include(CheckIPOSupported)
