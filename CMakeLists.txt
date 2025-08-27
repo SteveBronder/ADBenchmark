@@ -7,7 +7,17 @@ project("ADBenchmark"
 set(ADBENCH_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/benchmark)
 set(CMAKE_CXX_STANDARD 17)
 add_compile_options(-O3 -march=native)
+cmake_policy(SET CMP0069 NEW)
+include(CheckIPOSupported)
+check_ipo_supported(RESULT supported OUTPUT error)
 
+
+if( supported )
+    message(STATUS "IPO / LTO enabled")
+    set(INTERPROCEDURAL_OPTIMIZATION TRUE)
+else()
+    message(STATUS "IPO / LTO not supported: <${error}>")
+endif()
 add_definitions(
     -DNDEBUG
     -DEIGEN_NO_DEBUG)

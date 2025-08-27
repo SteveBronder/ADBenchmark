@@ -136,19 +136,35 @@ endif()
 # CppAD (header-only) -> CppAD::cppad
 # ----------------------------------------------------------------------
 if(DEP_ENABLE_CPPAD)
-  # Try system package first
-    message(STATUS "Fetching CppAD ${CPPAD_VERSION}")
-    set(cppad_static_lib ON CACHE BOOL "" FORCE)
-    FetchContent_Declare(cppad
-      GIT_REPOSITORY https://github.com/coin-or/CppAD.git
-      GIT_TAG        ${CPPAD_VERSION}
-      GIT_SHALLOW    TRUE
-    )
-    FetchContent_MakeAvailable(cppad)
-    # In some versions the exported target name can differ; provide a fallback alias.
-    if(TARGET cppad_lib)
-      add_library(CppAD::cppad ALIAS cppad_lib)
-    endif()
+  message(STATUS "Fetching CppAD ${CPPAD_VERSION}")
+  # If you want the optional compiled lib as well:
+  set(cppad_static_lib ON CACHE BOOL "" FORCE)
+
+  FetchContent_Declare(cppad
+    GIT_REPOSITORY https://github.com/coin-or/CppAD.git
+    GIT_TAG        ${CPPAD_VERSION}
+    GIT_SHALLOW    TRUE
+  )
+  FetchContent_MakeAvailable(cppad)
+
+  # Always provide a canonical interface target with headers
+  if(NOT TARGET CppAD::cppad)
+    add_library(CppAD::cppad INTERFACE IMPORTED)
+  endif()
+
+  # Export include dirs from the build tree (source + binary include)
+  # The headers are under include/cppad/... per upstream layout.
+  target_include_directories(CppAD::cppad INTERFACE
+    "${cppad_SOURCE_DIR}/include"
+    "${cppad_BINARY_DIR}/include"
+  )
+
+  # If upstream also built a library target, link it through the interface
+  if(TARGET cppad_lib)
+    # Optional: keep your old alias, but make sure you still use CppAD::cppad
+    # add_library(CppAD_cppad_lib ALIAS cppad_lib)
+    target_link_libraries(CppAD::cppad INTERFACE cppad_lib)
+  endif()
 endif()
 
 # ----------------------------------------------------------------------
