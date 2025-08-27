@@ -46,11 +46,10 @@ option(DEP_ENABLE_FASTAD    "Enable FastAD"           ON)
 # Adept (autotools) -> adept::adept INTERFACE with transitive BLAS/LAPACK
 # ----------------------------------------------------------------------
 if(DEP_ENABLE_ADEPT AND NOT TARGET adept::adept)
-  # No native CMake package; build it and expose an imported interface.
+  # No native CMake package; build it and expose an imported target.
   message(STATUS "Fetching Adept ${ADEPT_VERSION}")
   FetchContent_Declare(adept_src
     URL       http://www.met.reading.ac.uk/clouds/adept/adept-${ADEPT_VERSION}.tar.gz
-    # URL_HASH SHA256=<optional>
   )
   FetchContent_Populate(adept_src)
 
@@ -67,47 +66,57 @@ if(DEP_ENABLE_ADEPT AND NOT TARGET adept::adept)
     LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
   )
 
-  add_library(adept::adept INTERFACE IMPORTED)
-  add_dependencies(adept::adept adept_build)
-  target_include_directories(adept::adept INTERFACE
-    "${ADEPT_PREFIX}/include"
-  )
-  # lib + lib64 just in case
-  target_link_directories(adept::adept INTERFACE
-    "${ADEPT_PREFIX}/lib" "${ADEPT_PREFIX}/lib"
+  # Create an imported library that points at the built libadept.{a,dylib}
+  # We prefer the static library since that's what Adept typically installs by default.
+  add_library(adept STATIC IMPORTED GLOBAL)
+  add_dependencies(adept adept_build)
+
+  # Assume static build; if your Adept build generates a dylib instead,
+  # change the filename below to libadept.dylib.
+  # Provide both lib and lib64 paths just in case.
+  set(_ADEPT_LIB_STATIC "${ADEPT_PREFIX}/lib/libadept.a")
+  set_target_properties(adept PROPERTIES
+    IMPORTED_LOCATION "${_ADEPT_LIB_STATIC}"
+    INTERFACE_INCLUDE_DIRECTORIES "${ADEPT_PREFIX}/include"
   )
 
-  # Propagate BLAS/LAPACK (or Accelerate on macOS) to consumers:
+  # Provide the namespace alias expected by the rest of the project.
+  add_library(adept::adept ALIAS adept)
+
+  # If you want to support a shared build transparently, uncomment:
+  # if(NOT EXISTS "${_ADEPT_LIB_STATIC}")
+  #   set_property(TARGET adept PROPERTY IMPORTED_LOCATION "${ADEPT_PREFIX}/lib/libadept.dylib")
+  # endif()
+
+  # Carry BLAS/LAPACK (or Accelerate on macOS) to consumers:
   if(APPLE)
-    # Prefer Accelerate when BLAS/LAPACK packages are not present
     if(NOT TARGET LAPACK::LAPACK AND NOT TARGET BLAS::BLAS)
       find_library(ACCELERATE_FRAMEWORK Accelerate)
       if(ACCELERATE_FRAMEWORK)
-        target_link_libraries(adept::adept INTERFACE "${ACCELERATE_FRAMEWORK}")
+        target_link_libraries(adept INTERFACE "${ACCELERATE_FRAMEWORK}")
       else()
-        target_link_libraries(adept::adept INTERFACE lapack blas)
+        target_link_libraries(adept INTERFACE lapack blas)
       endif()
     else()
-      if(TARGET LAPACK::LAPACK) 
-        target_link_libraries(adept::adept INTERFACE LAPACK::LAPACK) 
+      if(TARGET LAPACK::LAPACK)
+        target_link_libraries(adept INTERFACE LAPACK::LAPACK)
       endif()
-      if(TARGET BLAS::BLAS)     
-        target_link_libraries(adept::adept INTERFACE BLAS::BLAS)   
+      if(TARGET BLAS::BLAS)
+        target_link_libraries(adept INTERFACE BLAS::BLAS)
       endif()
     endif()
   else()
-    if(TARGET LAPACK::LAPACK) 
-      target_link_libraries(adept::adept INTERFACE LAPACK::LAPACK) 
+    if(TARGET LAPACK::LAPACK)
+      target_link_libraries(adept INTERFACE LAPACK::LAPACK)
     endif()
-    if(TARGET BLAS::BLAS)     
-      target_link_libraries(adept::adept INTERFACE BLAS::BLAS)     
+    if(TARGET BLAS::BLAS)
+      target_link_libraries(adept INTERFACE BLAS::BLAS)
     endif()
-    # Fallback to linker names if modules weren’t found
-    if(NOT TARGET LAPACK::LAPACK) 
-      target_link_libraries(adept::adept INTERFACE lapack) 
+    if(NOT TARGET LAPACK::LAPACK)
+      target_link_libraries(adept INTERFACE lapack)
     endif()
-    if(NOT TARGET BLAS::BLAS)     
-      target_link_libraries(adept::adept INTERFACE blas)   
+    if(NOT TARGET BLAS::BLAS)
+      target_link_libraries(adept INTERFACE blas)
     endif()
   endif()
 endif()
