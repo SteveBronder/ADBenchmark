@@ -5,3 +5,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cppad ${CMAKE_CURRENT_BINARY_DIR}/c
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fastad ${CMAKE_CURRENT_BINARY_DIR}/fastad)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/sacado ${CMAKE_CURRENT_BINARY_DIR}/sacado)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/stan ${CMAKE_CURRENT_BINARY_DIR}/stan)
+
+# Create a phony target that builds all the benchmarks
+get_property(ALL_BENCHES GLOBAL PROPERTY ALL_BENCHES)
+add_custom_target(all_benches DEPENDS ${ALL_BENCHES})

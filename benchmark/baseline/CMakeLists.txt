@@ -12,6 +12,7 @@ function(add_baseline_executable name)
       benchmark::benchmark_main
       Threads::Threads
   )
+  set_property(GLOBAL APPEND PROPERTY ALL_BENCHES ${exec})
 endfunction()
 
 
@@ -24,3 +25,4 @@ add_baseline_executable("regression")
 add_baseline_executable("stochastic_volatility")
 add_baseline_executable("sum")
 add_baseline_executable("sum_iter")
+

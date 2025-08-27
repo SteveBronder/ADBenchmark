@@ -13,6 +13,7 @@ function(add_adolc_executable name)
 
       Threads::Threads
   )
+  set_property(GLOBAL APPEND PROPERTY ALL_BENCHES ${exec})
 endfunction()
 
 add_adolc_executable("log_sum_exp")
@@ -25,3 +26,6 @@ add_adolc_executable("stochastic_volatility")
 add_adolc_executable("sum")
 add_adolc_executable("sum_iter")
 
+# Create a phony target that builds all the benchmarks
+get_property(ADOLC_BENCHES GLOBAL PROPERTY ADOLC_BENCHES)
+add_custom_target(adolc_benches DEPENDS ${ADOLC_BENCHES})

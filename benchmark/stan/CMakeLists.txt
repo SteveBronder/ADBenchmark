@@ -20,6 +20,7 @@ function(add_stan_executable name)
       benchmark::benchmark_main
       stan-math::stan-math     # brings TBB (system or vendored) + link dirs via deps.cmake
   )
+  set_property(GLOBAL APPEND PROPERTY ALL_BENCHES ${exec})
 endfunction()
 
 

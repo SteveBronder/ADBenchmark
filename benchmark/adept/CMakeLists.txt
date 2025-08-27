@@ -14,6 +14,7 @@ function(add_adept_executable name)
       benchmark::benchmark_main
       Threads::Threads
   )
+  set_property(GLOBAL APPEND PROPERTY ALL_BENCHES ${exec})
 endfunction()
 
 add_adept_executable("log_sum_exp")
@@ -25,3 +26,4 @@ add_adept_executable("regression")
 add_adept_executable("stochastic_volatility")
 add_adept_executable("sum")
 add_adept_executable("sum_iter")
+

@@ -74,7 +74,7 @@ if(DEP_ENABLE_ADEPT AND NOT TARGET adept::adept)
   )
   # lib + lib64 just in case
   target_link_directories(adept::adept INTERFACE
-    "${ADEPT_PREFIX}/lib" "${ADEPT_PREFIX}/lib64"
+    "${ADEPT_PREFIX}/lib" "${ADEPT_PREFIX}/lib"
   )
 
   # Propagate BLAS/LAPACK (or Accelerate on macOS) to consumers:

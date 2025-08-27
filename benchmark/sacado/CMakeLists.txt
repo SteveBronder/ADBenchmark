@@ -17,6 +17,7 @@ function(add_sacado_executable name)
       benchmark::benchmark_main
       Threads::Threads
   )
+  set_property(GLOBAL APPEND PROPERTY ALL_BENCHES ${exec})
 endfunction()
 
 

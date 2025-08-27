@@ -10,6 +10,15 @@
 #include <fastad_bits/util/type_traits.hpp>
 #include <fastad_bits/util/value.hpp>
 
+#pragma once
+
+#include <fastad_bits/reverse/core/expr_base.hpp>
+#include <fastad_bits/reverse/core/value_adj_view.hpp>
+#include <fastad_bits/reverse/core/constant.hpp>
+#include <fastad_bits/util/size_pack.hpp>
+#include <fastad_bits/util/type_traits.hpp>
+#include <fastad_bits/util/value.hpp>
+
 namespace ad {
 namespace core {
 
@@ -33,10 +42,10 @@ struct MaxElemNode
   using typename value_adj_view_t::shape_t;
   using typename value_adj_view_t::var_t;
   using typename value_adj_view_t::ptr_pack_t;
-  template <typename T>
-  explicit MaxElemNode(T&& expr)
+
+  explicit MaxElemNode(const expr_t& expr)
       : value_adj_view_t(nullptr, nullptr, 1, 1),
-        expr_{std::forward<T>(expr)},
+        expr_{expr},
         rows_{0},
         cols_{0},
         imax_linear_{0} {}
@@ -46,6 +55,7 @@ struct MaxElemNode
    */
   const var_t& feval() {
     auto&& res = expr_.feval();
+
     if constexpr (util::is_scl_v<expr_t>) {
       rows_ = cols_ = 1;
       imax_linear_ = 0;
@@ -129,20 +139,23 @@ struct MaxElemNode
 template <class Derived,
           class = std::enable_if_t<util::is_convertible_to_ad_v<Derived> &&
                                    util::any_ad_v<Derived>>>
-inline auto max(Derived&& x) {
+inline auto max(const Derived& x) {
   using expr_t = util::convert_to_ad_t<Derived>;
+  expr_t expr = x;
+
   if constexpr (util::is_constant_v<expr_t>) {
     if constexpr (util::is_scl_v<expr_t>) {
-      return expr_t{std::forward<Derived>(x)};
+      return expr;
     } else {
-      return ad::constant(expr_t{std::forward<Derived>(x)}.feval().maxCoeff());
+      return ad::constant(expr.feval().maxCoeff());
     }
   } else {
-    return core::MaxElemNode<expr_t>(expr_t{std::forward<Derived>(x)});
+    return core::MaxElemNode<expr_t>(expr);
   }
 }
 
 }  // namespace ad
+
 
 namespace adb {
 
