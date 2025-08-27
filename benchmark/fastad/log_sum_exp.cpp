@@ -33,10 +33,10 @@ struct MaxElemNode
   using typename value_adj_view_t::shape_t;
   using typename value_adj_view_t::var_t;
   using typename value_adj_view_t::ptr_pack_t;
-
-  explicit MaxElemNode(const expr_t& expr)
+  template <typename T>
+  explicit MaxElemNode(T&& expr)
       : value_adj_view_t(nullptr, nullptr, 1, 1),
-        expr_{expr},
+        expr_{std::forward<T>(expr)},
         rows_{0},
         cols_{0},
         imax_linear_{0} {}
@@ -46,7 +46,6 @@ struct MaxElemNode
    */
   const var_t& feval() {
     auto&& res = expr_.feval();
-
     if constexpr (util::is_scl_v<expr_t>) {
       rows_ = cols_ = 1;
       imax_linear_ = 0;
@@ -130,18 +129,16 @@ struct MaxElemNode
 template <class Derived,
           class = std::enable_if_t<util::is_convertible_to_ad_v<Derived> &&
                                    util::any_ad_v<Derived>>>
-inline auto max(const Derived& x) {
+inline auto max(Derived&& x) {
   using expr_t = util::convert_to_ad_t<Derived>;
-  expr_t expr = x;
-
   if constexpr (util::is_constant_v<expr_t>) {
     if constexpr (util::is_scl_v<expr_t>) {
-      return expr;
+      return expr_t{std::forward<Derived>(x)};
     } else {
-      return ad::constant(expr.feval().maxCoeff());
+      return ad::constant(expr_t{std::forward<Derived>(x)}.feval().maxCoeff());
     }
   } else {
-    return core::MaxElemNode<expr_t>(expr);
+    return core::MaxElemNode<expr_t>(expr_t{std::forward<Derived>(x)});
   }
 }
 

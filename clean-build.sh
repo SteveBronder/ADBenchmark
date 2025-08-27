@@ -4,8 +4,6 @@
 PROJECTDIR=$(dirname "$BASH_SOURCE")
 
 cd "$PROJECTDIR"
-
-mkdir -p build && cd build
-rm -rf *
-cmake ../ "$@"
-cmake --build . -- -j12
+rm -rf ./build
+cmake -S . -B "build" --fresh -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cmake --build build -- -j12

@@ -11,24 +11,14 @@ add_compile_options(-O3 -march=native)
 add_definitions(
     -DNDEBUG
     -DEIGEN_NO_DEBUG)
+include(cmake/shared_dep.cmake)
+include(cmake/stan_dep.cmake)
+include(cmake/dep.cmake)
 
 # TODO: move this?
 if (STOCHASTIC_VOLATILITY_BYTESIZE)
     add_definitions(-DSTOCHASTIC_VOLATILITY_BYTESIZE)
 endif()
-
-# Find GBench
-find_package(benchmark CONFIG REQUIRED
-    HINTS ${PROJECT_SOURCE_DIR}/lib/benchmark/build/lib/cmake)
-
-# Find Eigen3
-find_package(Eigen3 3.3 CONFIG REQUIRED NO_MODULE)
-message(STATUS "Found Eigen3 config at: ${EIGEN3_INCLUDE_DIR}")
-
-# Find FastAD
-find_package(FastAD CONFIG REQUIRED
-    HINTS ${PROJECT_SOURCE_DIR}/lib/FastAD/build)
-message(STATUS "Found FastAD config at: ${FastAD_DIR}")
 
 # Automate the choosing of config
 if (NOT CMAKE_BUILD_TYPE)

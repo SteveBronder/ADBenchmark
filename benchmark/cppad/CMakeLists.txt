@@ -1,24 +1,18 @@
-# Find CppAD20200000.3
-find_library(CPPAD_LIB
-             cppad_lib
-             REQUIRED
-             HINTS ${PROJECT_SOURCE_DIR}/lib/cppad/build/lib)
-message(STATUS "Found CPPAD lib at: ${CPPAD_LIB}")
-
-# Function macro to easily create executables for each test
 function(add_cppad_executable name)
-    set(exec "cppad_${name}")
-    add_executable(${exec} "${name}.cpp")
-    target_include_directories(${exec} PRIVATE
-        ${ADBENCH_INCLUDE_DIR}
-        ${PROJECT_SOURCE_DIR}/lib/cppad/build/include)
-    target_link_libraries(${exec}
-        Eigen3::Eigen
-        FastAD::FastAD
-        ${CPPAD_LIB}
-        benchmark::benchmark
-        benchmark::benchmark_main
-        pthread)
+  set(exec "cppad_${name}")
+  add_executable(${exec} "${name}.cpp")
+
+  target_include_directories(${exec} PRIVATE ${ADBENCH_INCLUDE_DIR})
+
+  target_link_libraries(${exec}
+    PRIVATE
+      Eigen3::Eigen
+      fastad::fastad
+      CppAD::cppad            # header-only target from deps.cmake
+      benchmark::benchmark
+      benchmark::benchmark_main
+      Threads::Threads
+  )
 endfunction()
 
 add_cppad_executable("log_sum_exp")

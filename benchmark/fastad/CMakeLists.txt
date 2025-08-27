@@ -1,15 +1,19 @@
-# Function macro to easily create executables for each test
 function(add_fastad_executable name)
-    set(exec "fastad_${name}")
-    add_executable(${exec} "${name}.cpp")
-    target_include_directories(${exec} PRIVATE ${ADBENCH_INCLUDE_DIR})
-    target_link_libraries(${exec}
-        FastAD::FastAD
-        Eigen3::Eigen
-        benchmark::benchmark
-        benchmark::benchmark_main
-        pthread)
+  set(exec "fastad_${name}")
+  add_executable(${exec} "${name}.cpp")
+
+  target_include_directories(${exec} PRIVATE ${ADBENCH_INCLUDE_DIR})
+
+  target_link_libraries(${exec}
+    PRIVATE
+      fastad::fastad          # deps.cmake also provides FastAD::FastAD alias
+      Eigen3::Eigen
+      benchmark::benchmark
+      benchmark::benchmark_main
+      Threads::Threads
+  )
 endfunction()
+
 
 add_fastad_executable("log_sum_exp")
 add_fastad_executable("matrix_product")

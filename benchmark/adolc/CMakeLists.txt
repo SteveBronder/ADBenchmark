@@ -1,24 +1,22 @@
-# Find ADOL-C2.7.2
-find_library(ADOLC_LIB
-             adolc
-             REQUIRED
-             HINTS ${PROJECT_SOURCE_DIR}/lib/adolc/build/lib64)
-message(STATUS "Found ADOL-C lib at: ${ADOLC_LIB}")
-
-# Function macro to easily create executables for each test
 function(add_adolc_executable name)
-    set(exec "adolc_${name}")
-    add_executable(${exec} "${name}.cpp")
-    target_include_directories(${exec} PRIVATE
-        ${ADBENCH_INCLUDE_DIR}
-        ${PROJECT_SOURCE_DIR}/lib/adolc/build/include)
-    target_link_libraries(${exec}
-        Eigen3::Eigen
-        FastAD::FastAD
-        ${ADOLC_LIB}
-        benchmark::benchmark
-        benchmark::benchmark_main
-        pthread)
+  set(exec "adolc_${name}")
+  add_executable(${exec} "${name}.cpp")
+
+  target_include_directories(${exec} PRIVATE ${ADBENCH_INCLUDE_DIR})
+
+  target_link_libraries(${exec}
+    PRIVATE
+      Eigen3::Eigen
+      fastad::fastad
+      adolc::adolc            # include+link dirs and lib(s) from deps.cmake
+      benchmark::benchmark
+      benchmark::benchmark_main
+      Threads::Threads
+  )
+  add_custom_command(TARGET ${exec} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${CMAKE_CURRENT_SOURCE_DIR}/.adolcrc
+          $<TARGET_FILE_DIR:${exec}>/.adolcrc)
 endfunction()
 
 add_adolc_executable("log_sum_exp")
@@ -31,9 +29,3 @@ add_adolc_executable("stochastic_volatility")
 add_adolc_executable("sum")
 add_adolc_executable("sum_iter")
 
-# ADOLC requires a .adolcrc to be copied where executables are
-add_custom_target(COPYADOLCRC
-    ALL
-    ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_SOURCE_DIR}/.adolcrc
-    ${CMAKE_CURRENT_BINARY_DIR}/.adolcrc)

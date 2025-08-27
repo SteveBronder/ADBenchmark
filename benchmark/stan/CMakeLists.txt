@@ -1,43 +1,27 @@
-# Find STAN3.3.0 (and dependencies)
-find_library(TBB_LIB
-             tbb
-             REQUIRED
-             HINTS ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/tbb)
-find_library(TBBMALLOC_LIB
-             tbbmalloc
-             REQUIRED
-             HINTS ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/tbb)
-find_library(TBBMALLOC_PROXY_LIB
-             tbbmalloc_proxy
-             REQUIRED
-             HINTS ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/tbb)
-message(STATUS "Found TBB lib at: ${TBB_LIB}")
-
-# Function macro to easily create executables for each test
 function(add_stan_executable name)
-    set(exec "stan_${name}")
-    add_executable(${exec} "${name}.cpp")
-    target_compile_options(${exec} PRIVATE -O3 -march=native -mtune=native  -ftemplate-backtrace-limit=0)
-    target_compile_definitions(${exec} PRIVATE
-        -D_REENTRANT)
-    target_compile_options(${exec} PRIVATE
-        -Wno-unused-local-typedef)
-    target_include_directories(${exec} PRIVATE
-        ${ADBENCH_INCLUDE_DIR}
-        ${PROJECT_SOURCE_DIR}/lib/stan-dev-math
-        ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/tbb_2020.3/include
-        ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/boost_1.87.0
-        ${PROJECT_SOURCE_DIR}/lib/stan-dev-math/lib/sundials_6.1.1/include)
-    target_link_libraries(${exec}
-        Eigen3::Eigen
-        FastAD::FastAD
-        ${TBB_LIB}
-        ${TBBMALLOC_LIB}
-        ${TBBMALLOC_PROXY_LIB}
-        benchmark::benchmark
-        benchmark::benchmark_main
-        pthread)
+  set(exec "stan_${name}")
+  add_executable(${exec} "${name}.cpp")
+
+  target_compile_options(${exec}
+    PRIVATE
+      -O3 -march=native -mtune=native
+      -ftemplate-backtrace-limit=0
+      -Wno-unused-local-typedef
+  )
+  target_compile_definitions(${exec} PRIVATE _REENTRANT)
+
+  target_include_directories(${exec} PRIVATE ${ADBENCH_INCLUDE_DIR})
+
+  target_link_libraries(${exec}
+    PRIVATE
+      Eigen3::Eigen
+      fastad::fastad
+      benchmark::benchmark
+      benchmark::benchmark_main
+      stan-math::stan-math     # brings TBB (system or vendored) + link dirs via deps.cmake
+  )
 endfunction()
+
 
 add_stan_executable("log_sum_exp")
 add_stan_executable("matrix_product")
