@@ -4,15 +4,14 @@
 
 namespace adb {
 
-struct LogSumExpFunc: LogSumExpFuncBase
-{
-    adept::aReal operator()(const adept::aVector& x) const
-    {
-        return adept::log(adept::sum(adept::fastexp(x)));
-    }
+struct LogSumExpFunc : LogSumExpFuncBase {
+  adept::aReal operator()(const adept::aVector &x) const {
+    return adept::log(adept::sum(adept::fastexp(x)));
+  }
 };
 
 BENCHMARK_TEMPLATE(BM_adept, LogSumExpFunc)
-    -> RangeMultiplier(2) -> Range(1, 1 << 14);
+    ->RangeMultiplier(2)
+    ->Range(1, adb::max_size_iter);
 
 } // namespace adb

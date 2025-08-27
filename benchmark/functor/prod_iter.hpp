@@ -1,21 +1,19 @@
 #pragma once
-#include <string>
 #include <functor/prod.hpp>
+#include <string>
 
 namespace adb {
 
-struct ProdIterFuncBase: ProdFuncBase
-{
-    template <class T>
-    T operator()(const Eigen::Matrix<T, Eigen::Dynamic, 1>& x) const
-    {
-        T product_x = 1;
-        for (int i = 0; i < x.size(); ++i) {
-            product_x *= x(i);
-        }
-        return product_x;
+struct ProdIterFuncBase : ProdFuncBase {
+  template <class T>
+  T operator()(const Eigen::Matrix<T, Eigen::Dynamic, 1> &x) const {
+    T product_x = 1;
+    for (int i = 0; i < x.size(); ++i) {
+      product_x *= x(i);
     }
-    std::string name() const { return "prod_iter"; }
+    return product_x;
+  }
+  std::string name() const { return "prod_iter"; }
 };
 
 } // namespace adb
