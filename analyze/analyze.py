@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 from subprocess import check_output
-
+import subprocess as subp
 # Path definitions
 figpath = '../docs/figs'
 libpath = '../build/benchmark'
@@ -52,15 +52,19 @@ def run(testname):
 
         # change directory to library
         # some libraries may require this to read configuration file
-        os.chdir(lib_path(lib))
-
-        path = os.path.join('.', bin_name(lib, testname))
+        path = os.path.join(lib_path(lib), lib + "_" + testname)
         print(path)
 
         # run and get output from each
-        args = (path, "--benchmark_format=csv")
-        data = io.StringIO(check_output(args).decode("utf-8"))
-        df_lib = pd.read_csv(data, sep=',')
+        data_path = os.path.join("/tmp", str(testname + "_" + lib + "_multirun.csv"))
+        exec_str = [path, "--benchmark_out_format=csv", "--benchmark_format=csv", "--benchmark_repetitions=30", "--benchmark_enable_random_interleaving=true ", "--benchmark_out=" + data_path]
+        subp.run(exec_str, check=True)
+        df_lib = pd.read_csv(data_path, sep=',', skiprows=8)
+        # if ./doc/benchmark_aggs does not exist, create it
+        multi_path = os.path.join(datapath, "benchmark_aggs")
+        if not os.path.exists(multi_path):
+          os.makedirs(multi_path)
+        df_lib.to_csv(os.path.join(multi_path, str(testname + "_" + lib + ".csv")))
         df_lib.set_index('N', inplace=True)
         if lib == 'stan' and df_lib['name'].str.contains('varmat').any():
           df['stan'] = df_lib[df_lib['name'].str.contains('BM_stan<')]['cpu_time']
@@ -72,7 +76,7 @@ def run(testname):
         os.chdir(cur_path)
 
     # save absolute time
-    data_path = os.path.join(datapath, testname + ".csv")
+    data_path = os.path.join(datapath, testname + "_multirun.csv")
     df.to_csv(data_path)
 
     # create relative time to fastad
