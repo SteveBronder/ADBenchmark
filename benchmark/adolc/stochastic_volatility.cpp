@@ -3,10 +3,11 @@
 
 namespace adb {
 
-struct StochasticVolatilityFunc : StochasticVolatilityFuncBase {};
+struct StochasticVolatilityFunc: StochasticVolatilityFuncBase
+{};
 
 BENCHMARK_TEMPLATE(BM_adolc, StochasticVolatilityFunc)
-    ->RangeMultiplier(2)
-    ->Range(1, adb::max_size_iter);
+    -> RangeMultiplier(2) -> Range(1, 1 << 14);
 
 } // namespace adb
+

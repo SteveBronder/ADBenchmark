@@ -46,43 +46,41 @@ option(DEP_ENABLE_FASTAD    "Enable FastAD"           ON)
 # Adept (autotools) -> adept::adept INTERFACE with transitive BLAS/LAPACK
 # ----------------------------------------------------------------------
 if(DEP_ENABLE_ADEPT AND NOT TARGET adept::adept)
-  # No native CMake package; build it and expose an imported target.
   message(STATUS "Fetching Adept ${ADEPT_VERSION}")
   FetchContent_Declare(adept_src
-    URL       http://www.met.reading.ac.uk/clouds/adept/adept-${ADEPT_VERSION}.tar.gz
+    URL http://www.met.reading.ac.uk/clouds/adept/adept-${ADEPT_VERSION}.tar.gz
   )
   FetchContent_Populate(adept_src)
 
-  set(ADEPT_PREFIX "${adept_src_SOURCE_DIR}")
+  # Stage installation outside the source tree
+  set(ADEPT_PREFIX "${CMAKE_BINARY_DIR}/adept-install")
+
   ExternalProject_Add(adept_build
     SOURCE_DIR        "${adept_src_SOURCE_DIR}"
     BUILD_IN_SOURCE   TRUE
     CONFIGURE_COMMAND ${adept_src_SOURCE_DIR}/configure
-                       CXXFLAGS=-O3\ -march=native
-                       --prefix=${ADEPT_PREFIX}
-                       --exec_prefix=${ADEPT_PREFIX}
-    BUILD_COMMAND     make -j${DEPS_JOBS}
-    INSTALL_COMMAND   make install
-    LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
+                      CXXFLAGS=-O3\ -march=native\ -fPIC
+                      --prefix=${ADEPT_PREFIX}
+    BUILD_COMMAND     $(MAKE) -j${DEPS_JOBS}
+    INSTALL_COMMAND   $(MAKE) install
+    # Let Ninja/Make know which files this target generates:
+    BUILD_BYPRODUCTS
+      ${ADEPT_PREFIX}/lib/libadept.a
+      ${ADEPT_PREFIX}/lib/libadept.so
+      ${ADEPT_PREFIX}/include/adept.h
   )
 
-  # Create an imported library that points at the built libadept.{a,dylib}
-  # We prefer the static library since that's what Adept typically installs by default.
-  add_library(adept STATIC IMPORTED GLOBAL)
+  add_library(adept UNKNOWN IMPORTED GLOBAL)
   add_dependencies(adept adept_build)
 
-  # Assume static build; if your Adept build generates a dylib instead,
-  # change the filename below to libadept.dylib.
-  # Provide both lib and lib64 paths just in case.
-  set(_ADEPT_LIB_STATIC "${ADEPT_PREFIX}/lib/libadept.a")
+  # Headers are available immediately in the source tree:
   set_target_properties(adept PROPERTIES
-    IMPORTED_LOCATION "${_ADEPT_LIB_STATIC}"
-    INTERFACE_INCLUDE_DIRECTORIES "${ADEPT_PREFIX}/include"
+    INTERFACE_INCLUDE_DIRECTORIES "${adept_src_SOURCE_DIR}/include"
+    IMPORTED_LOCATION             "${ADEPT_PREFIX}/lib/libadept.a"  # or .so below
   )
-
-  # Provide the namespace alias expected by the rest of the project.
+  find_package(OpenMP REQUIRED)        # or optional if you want to fall back
+  target_link_libraries(adept INTERFACE OpenMP::OpenMP_CXX)
   add_library(adept::adept ALIAS adept)
-
   # If you want to support a shared build transparently, uncomment:
   # if(NOT EXISTS "${_ADEPT_LIB_STATIC}")
   #   set_property(TARGET adept PROPERTY IMPORTED_LOCATION "${ADEPT_PREFIX}/lib/libadept.dylib")

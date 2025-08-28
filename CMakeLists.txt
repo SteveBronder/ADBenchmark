@@ -12,6 +12,7 @@ add_compile_options(-O3 -march=native)
 cmake_policy(SET CMP0069 NEW)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT supported OUTPUT error)
+add_compile_options(-Wno-error=stringop-overflow)
 
 
 if( supported )

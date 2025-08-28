@@ -3,10 +3,10 @@
 
 namespace adb {
 
-struct ProdFunc : ProdFuncBase {};
+struct ProdFunc: ProdFuncBase
+{};
 
 BENCHMARK_TEMPLATE(BM_baseline, ProdFunc)
-    ->RangeMultiplier(2)
-    ->Range(1, adb::max_size_iter);
+    -> RangeMultiplier(2) -> Range(1, 1 << 14);
 
 } // namespace adb

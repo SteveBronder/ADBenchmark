@@ -3,3 +3,7 @@ lib/*
 build/*
 *.DS_Store*
 .vscode/*
+.Rproj.user
+ADBenchmark.Rproj
+.venv/*
+**/__pycache__/*

@@ -39,9 +39,8 @@ if(DEP_ENABLE_BENCHMARK)
   set(BENCHMARK_ENABLE_EXCEPTIONS     ON CACHE BOOL "" FORCE)
   set(BENCHMARK_DOWNLOAD_DEPENDENCIES OFF CACHE BOOL "" FORCE)
   set(BENCHMARK_ENABLE_LTO ON CACHE BOOL "" FORCE)
-  
+
   # try a system one first
-  find_package(benchmark QUIET CONFIG)
   if(NOT TARGET benchmark::benchmark)
     message(STATUS "Fetching google/benchmark (main)")
     FetchContent_Declare(benchmark

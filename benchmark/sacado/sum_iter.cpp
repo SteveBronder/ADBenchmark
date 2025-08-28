@@ -1,12 +1,12 @@
-#include <functor/sum_iter.hpp>
 #include <sacado/driver.hpp>
+#include <functor/sum_iter.hpp>
 
 namespace adb {
 
-struct SumIterFunc : SumIterFuncBase {};
+struct SumIterFunc: SumIterFuncBase
+{};
 
 BENCHMARK_TEMPLATE(BM_sacado, SumIterFunc)
-    ->RangeMultiplier(2)
-    ->Range(1, adb::max_size_iter);
+    -> RangeMultiplier(2) -> Range(1, 1 << 14);
 
 } // namespace adb

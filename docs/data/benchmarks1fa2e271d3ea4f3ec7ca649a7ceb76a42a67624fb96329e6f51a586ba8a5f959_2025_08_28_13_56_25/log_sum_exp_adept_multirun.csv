@@ -1,0 +1,9 @@
+2025-08-28T14:12:05-04:00
+Running ../build/benchmark/adept/adept_log_sum_exp
+Run on (32 X 2402.18 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x16)
+  L1 Instruction 64 KiB (x16)
+  L2 Unified 512 KiB (x16)
+  L3 Unified 8192 KiB (x4)
+Load Average: 2.18, 1.82, 1.52
