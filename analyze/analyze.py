@@ -110,7 +110,7 @@ def main():
         base_file_name = hashlib.sha256(encoded_text).hexdigest()
     print(text)
     formatted_datetime = datetime.now().strftime("%Y_%m_%d_H%H_M%M_S%S")
-    multi_path = os.path.join(datapath, "benchmarks" + base_file_name + "_" + formatted_datetime)
+    multi_path = os.path.join(datapath, "benchmarks" + formatted_datetime + "_" + base_file_name)
     # Make multi path folder if does not exist
     if not os.path.exists(multi_path):
         os.makedirs(multi_path)
