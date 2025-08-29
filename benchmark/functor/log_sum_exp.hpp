@@ -13,12 +13,15 @@ struct LogSumExpFuncBase: FuncBase
         return log(x.array().exp().sum());
     }
 
-    void derivative(const Eigen::VectorXd& x,
-                    Eigen::VectorXd& grad) const
-    {
-        double denom = x.array().exp().sum();
-        grad = x.array().exp() / denom;
+    static auto derivative(const Eigen::VectorXd& x,
+                    Eigen::VectorXd& grad) const {
+        auto x_max = x.maxCoeff();
+        auto x_ret = (x.array() - x_max).exp();
+        auto ret = x_max + std::log(x_ret.sum());
+        grad = (x.array() - ret).exp();
+        return ret;
     }
+
 
     std::string name() const { return "log_sum_exp"; }
 };

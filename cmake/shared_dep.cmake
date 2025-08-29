@@ -66,4 +66,7 @@ endif()
     CMAKE_ARGS -DTBB_STRICT=OFF -DTBB_TEST=OFF
     CMAKE_CACHE_ARGS -DTBB_STRICT:BOOL=OFF -DTBB_TEST:BOOL=OFF
   )
-    FetchContent_MakeAvailable(tbb)
+  FetchContent_MakeAvailable(tbb)
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(tbb -Wno-error=stringop-overflow)
+  endif()

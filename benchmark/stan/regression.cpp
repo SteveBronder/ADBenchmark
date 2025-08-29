@@ -28,7 +28,7 @@ struct RegressionFunc: RegressionFuncBase
         varmat_t w(x_val_arena, x_adj_arena);
         auto b = x.coeffRef(N);
         auto sigma = x.coeffRef(N + 1);
-        return normal_lpdf(y, multiply(X, w) + multiply(b, vec_t::Ones(1000)), sigma) +
+        return normal_lpdf(y, add(multiply(X, w), b), sigma) +
                 normal_lpdf(w, 0., 1.) +
                 normal_lpdf(b, 0., 1.) -
                 uniform_lpdf(sigma, 0.1, 10.);

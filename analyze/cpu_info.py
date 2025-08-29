@@ -20,9 +20,11 @@ import re
 import shutil
 import subprocess
 import sys
+import platform
 from collections import defaultdict
 
 USE_COLOR_DEFAULT = sys.stdout.isatty()
+IS_DARWIN = platform.system() == "Darwin"
 
 def which(cmd): return shutil.which(cmd)
 
@@ -69,6 +71,18 @@ def colorize(s, color=None, bold=False, use_color=USE_COLOR_DEFAULT):
     return f"\x1b[{';'.join(codes)}m{s}\x1b[0m"
 
 def parse_os_release():
+    if IS_DARWIN:
+        d = {}
+        txt = run(["sw_vers"])
+        for line in txt.splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                d[k.strip()] = v.strip()
+        return {
+            "distro": d.get("ProductName") or "macOS",
+            "id": "macos",
+            "version": d.get("ProductVersion"),
+        }
     d = {}
     txt = read_text("/etc/os-release")
     for line in txt.splitlines():
@@ -92,6 +106,66 @@ def uname_info():
     }
 
 def parse_lscpu():
+    if IS_DARWIN:
+        info = {}
+        info["Architecture"] = run(["uname", "-m"])
+        logical = run(["sysctl", "-n", "hw.logicalcpu"])
+        physical = run(["sysctl", "-n", "hw.physicalcpu"])
+        sockets = run(["sysctl", "-n", "hw.packages"])
+        if sockets.isdigit():
+            info["Socket(s)"] = sockets
+        if physical.isdigit() and sockets.isdigit() and int(sockets):
+            info["Core(s) per socket"] = str(int(physical)//int(sockets))
+        if logical.isdigit() and physical.isdigit() and int(physical):
+            info["Thread(s) per core"] = str(int(logical)//int(physical))
+        if logical:
+            info["CPU(s)"] = logical
+        model = run(["sysctl", "-n", "machdep.cpu.brand_string"])
+        if model:
+            info["Model name"] = model
+
+        # Apple Silicon exposes separate performance and efficiency levels
+        perf = run(["sysctl", "-n", "hw.perflevel0.physicalcpu"])
+        eff = run(["sysctl", "-n", "hw.perflevel1.physicalcpu"])
+        if perf.isdigit():
+            info["Performance cores"] = perf
+        if eff.isdigit():
+            info["Efficiency cores"] = eff
+
+        def pl_cache(key):
+            p = run(["sysctl", "-n", f"hw.perflevel0.{key}"])
+            e = run(["sysctl", "-n", f"hw.perflevel1.{key}"])
+            parts = []
+            if p.isdigit():
+                parts.append(f"P {human_bytes(int(p))}")
+            if e.isdigit():
+                parts.append(f"E {human_bytes(int(e))}")
+            if parts:
+                return ", ".join(parts)
+            base = run(["sysctl", "-n", f"hw.{key}"])
+            if base.isdigit():
+                return human_bytes(int(base))
+            return None
+
+        l1d = pl_cache("l1dcachesize")
+        l1i = pl_cache("l1icachesize")
+        l2 = pl_cache("l2cachesize")
+        l3 = pl_cache("l3cachesize")
+        if l1d: info["L1d cache"] = l1d
+        if l1i: info["L1i cache"] = l1i
+        if l2:  info["L2 cache"] = l2
+        if l3:  info["L3 cache"] = l3
+
+        freq = run(["sysctl", "-n", "hw.cpufrequency"])
+        maxf = run(["sysctl", "-n", "hw.cpufrequency_max"])
+        if freq.isdigit(): info["CPU MHz"] = f"{int(freq)//1000000}"
+        if maxf.isdigit(): info["CPU max MHz"] = f"{int(maxf)//1000000}"
+        flags = (run(["sysctl", "-n", "machdep.cpu.features"]) + " " +
+                 run(["sysctl", "-n", "machdep.cpu.leaf7_features"]))
+        flags = flags.strip()
+        if flags:
+            info["Flags"] = flags
+        return {k:v for k,v in info.items() if v}
     info = {}
     txt = run(["lscpu"])
     for line in txt.splitlines():
@@ -101,6 +175,24 @@ def parse_lscpu():
     return info
 
 def proc_cpuinfo():
+    if IS_DARWIN:
+        model = run(["sysctl", "-n", "machdep.cpu.brand_string"])
+        features = run(["sysctl", "-n", "machdep.cpu.features"])
+        features += " " + run(["sysctl", "-n", "machdep.cpu.leaf7_features"])
+        flags = features.split()
+        sockets = run(["sysctl", "-n", "hw.packages"])
+        physical = run(["sysctl", "-n", "hw.physicalcpu"])
+        sockets_int = int(sockets) if sockets.isdigit() else None
+        phys_int = int(physical) if physical.isdigit() else None
+        cores_per_socket = None
+        if sockets_int and phys_int:
+            cores_per_socket = phys_int // sockets_int if sockets_int else None
+        return {
+            "model_name": model or None,
+            "flags": sorted(flags) if flags else [],
+            "sockets": sockets_int,
+            "cores_per_socket": cores_per_socket,
+        }
     txt = read_text("/proc/cpuinfo")
     sockets = {}
     flags_set = set()
@@ -127,6 +219,16 @@ def proc_cpuinfo():
     }
 
 def cpufreq_info():
+    if IS_DARWIN:
+        base = run(["sysctl", "-n", "hw.cpufrequency"])
+        maxf = run(["sysctl", "-n", "hw.cpufrequency_max"])
+        return {
+            "base_freq_mhz": f"{int(base)//1000000}" if base.isdigit() else None,
+            "max_freq_mhz": f"{int(maxf)//1000000}" if maxf.isdigit() else None,
+            "governor": None,
+            "driver": None,
+            "boost": None,
+        }
     # Aggregate from /sys
     base_mhz = None
     max_mhz = None
@@ -177,6 +279,29 @@ def cpufreq_info():
     }
 
 def cache_info():
+    if IS_DARWIN:
+        caches = []
+        for pl in (0, 1):
+            name = run(["sysctl", "-n", f"hw.perflevel{pl}.name"])
+            prefix = f"hw.perflevel{pl}"
+            l1d = run(["sysctl", "-n", f"{prefix}.l1dcachesize"])
+            l1i = run(["sysctl", "-n", f"{prefix}.l1icachesize"])
+            l2 = run(["sysctl", "-n", f"{prefix}.l2cachesize"])
+            tag = name or f"perflevel{pl}"
+            if l1d.isdigit():
+                caches.append({"level": "1", "type": f"{tag} Data",
+                               "size": human_bytes(int(l1d)), "associativity": None})
+            if l1i.isdigit():
+                caches.append({"level": "1", "type": f"{tag} Instruction",
+                               "size": human_bytes(int(l1i)), "associativity": None})
+            if l2.isdigit():
+                caches.append({"level": "2", "type": f"{tag} Unified",
+                               "size": human_bytes(int(l2)), "associativity": None})
+        l3 = run(["sysctl", "-n", "hw.l3cachesize"])
+        if l3.isdigit():
+            caches.append({"level": "3", "type": "Unified",
+                           "size": human_bytes(int(l3)), "associativity": None})
+        return caches
     # Inspect cpu0 cache levels
     base = "/sys/devices/system/cpu/cpu0/cache"
     caches = []
@@ -193,6 +318,8 @@ def cache_info():
     return caches
 
 def numa_info():
+    if IS_DARWIN:
+        return []
     nodes = []
     nb = "/sys/devices/system/node"
     if not os.path.isdir(nb): return nodes
@@ -209,6 +336,31 @@ def numa_info():
     return nodes
 
 def mem_info():
+    if IS_DARWIN:
+        data = {}
+        total = run(["sysctl", "-n", "hw.memsize"])
+        if total.isdigit():
+            data["total"] = int(total)
+        vm = run(["vm_stat"])
+        page_size = 4096
+        m = re.search(r"page size of (\d+) bytes", vm)
+        if m:
+            page_size = int(m.group(1))
+        free = inactive = 0
+        for line in vm.splitlines():
+            m = re.match(r"Pages\s+free:\s+(\d+)", line)
+            if m: free = int(m.group(1))
+            m = re.match(r"Pages\s+inactive:\s+(\d+)", line)
+            if m: inactive = int(m.group(1))
+        data["available"] = (free + inactive) * page_size if (free or inactive) else None
+        swap = run(["sysctl", "-n", "vm.swapusage"])
+        m = re.search(r"total = ([0-9.]+)M\s+used = ([0-9.]+)M\s+free = ([0-9.]+)M", swap)
+        if m:
+            data["swap_total"] = int(float(m.group(1)) * 1024 * 1024)
+            data["swap_free"] = int(float(m.group(3)) * 1024 * 1024)
+        data["hugepages_total"] = None
+        data["hugepage_size"] = None
+        return data
     data = {}
     txt = read_text("/proc/meminfo")
     for line in txt.splitlines():
@@ -264,6 +416,30 @@ def dmidecode_memory():
     return [s for s in speeds if s]
 
 def gpu_info():
+    if IS_DARWIN:
+        out = run(["system_profiler", "SPDisplaysDataType"])
+        gpus = []
+        current = {}
+        for line in out.splitlines():
+            line = line.rstrip()
+            if not line:
+                continue
+            stripped = line.strip()
+            if not line.startswith(" ") and line.endswith(":") and current:
+                gpus.append(current)
+                current = {}
+            if ":" in stripped:
+                k, v = stripped.split(":", 1)
+                current[k.strip()] = v.strip()
+        if current:
+            gpus.append(current)
+        result = []
+        for g in gpus:
+            name = g.get("Chipset Model")
+            vram = g.get("VRAM (Total)") or g.get("VRAM")
+            if name or vram:
+                result.append({"vendor": "Apple", "name": name, "vram": vram})
+        return result
     gpus = []
     if which("nvidia-smi"):
         q = run(["nvidia-smi","--query-gpu=name,driver_version,memory.total,pstate,clocks.gr,clocks.mem","--format=csv,noheader"])
@@ -377,6 +553,9 @@ def build_report(args):
 
     simd = parse_flags(pinfo.get("flags", []))
 
+    perf_cores = lscpu.get("Performance cores")
+    eff_cores = lscpu.get("Efficiency cores")
+
     # Memory
     total_ram = human_bytes(mem["total"]) if mem.get("total") else None
     avail_ram = human_bytes(mem["available"]) if mem.get("available") else None
@@ -391,6 +570,8 @@ def build_report(args):
     if threads_per_core: line2.append(f"threads/core {threads_per_core}")
     if cpus: line2.append(f"logical {cpus}")
     summary.append("  " + ", ".join(line2))
+    if perf_cores or eff_cores:
+        summary.append(f"  core types: {perf_cores or '?'} perf, {eff_cores or '?'} eff")
     clocks = []
     if base_ghz: clocks.append(f"base {base_ghz}")
     if max_ghz: clocks.append(f"max {max_ghz}")
@@ -426,6 +607,7 @@ def build_report(args):
         return "\n".join(summary), {
             "cpu": {"model": model, "sockets": sockets, "cores_per_socket": cores_per_socket,
                     "threads_per_core": threads_per_core, "logical_cpus": cpus,
+                    "performance_cores": perf_cores, "efficiency_cores": eff_cores,
                     "base_freq": base_ghz, "max_freq": max_ghz, "boost": freq.get("boost"),
                     "l3_cache": l3, "simd": simd},
             "memory": {"total": mem.get("total"), "available": mem.get("available"), "swap_total": mem.get("swap_total"), "dimm_speeds": memspeeds},
@@ -445,6 +627,8 @@ def build_report(args):
     lines.append(f"Model name   : {model}")
     if sockets or cores_per_socket or threads_per_core or cpus:
         lines.append(f"Topology     : sockets={sockets or '?'}, cores/socket={cores_per_socket or '?'}, threads/core={threads_per_core or '?'}, logical={cpus or '?'}")
+    if perf_cores or eff_cores:
+        lines.append(f"Core types   : perf={perf_cores or '?'} eff={eff_cores or '?'}")
     lines.append(f"cpufreq      : driver={freq.get('driver') or 'unknown'}, governor={freq.get('governor') or 'unknown'}, boost={freq.get('boost') or 'unknown'}")
     lines.append(f"Clocks       : base={base_ghz or 'unknown'}, max={max_ghz or 'unknown'}")
     if l1d or l1i or l2 or l3:
@@ -530,6 +714,8 @@ def build_report(args):
                 "cores_per_socket": cores_per_socket,
                 "threads_per_core": threads_per_core,
                 "logical_cpus": cpus,
+                "performance_cores": perf_cores,
+                "efficiency_cores": eff_cores,
                 "base_freq": base_ghz,
                 "max_freq": max_ghz,
                 "boost": freq.get("boost"),

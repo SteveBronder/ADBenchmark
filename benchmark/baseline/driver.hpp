@@ -13,11 +13,12 @@ static void BM_baseline(benchmark::State& state)
     Eigen::VectorXd x(N);
     f.fill(x);
     double fx;
+    Eigen::VectorXd grad_fx(x.size());
 
     state.counters["N"] = x.size();
 
     for (auto _ : state) {
-        fx = f(x);
+        fx = f.derivative(x, grad_fx);
         benchmark::DoNotOptimize(fx);
     }
 }

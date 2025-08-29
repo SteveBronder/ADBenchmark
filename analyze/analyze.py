@@ -27,7 +27,7 @@ libs = ['fastad', 'stan', 'adept', 'baseline', 'cppad', 'sacado']
 # List of test names
 tests = ['log_sum_exp', 'matrix_product', 'normal_log_pdf', 'prod', 'prod_iter',
           'regression', 'stochastic_volatility', 'sum', 'sum_iter']
-
+tests = ['regression']
 # Make plot font size bigger
 plt.rcParams["font.size"] = "12"
 

@@ -1,0 +1,8 @@
+2025-08-29T11:18:58-04:00
+Running ../build/benchmark/stan/stan_regression
+Run on (12 X 24 MHz CPU s)
+CPU Caches:
+  L1 Data 64 KiB
+  L1 Instruction 128 KiB
+  L2 Unified 4096 KiB (x12)
+Load Average: 2.95, 2.91, 2.77

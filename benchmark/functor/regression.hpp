@@ -55,16 +55,61 @@ struct RegressionFuncBase: FuncBase
         auto z_sq = sqrt((y - mu) * (y - mu)) / (sigma * sigma);
         return -0.5 * z_sq - log(sigma);
     }
+    // Computes:
+    //   L = -0.5 * ||y - (X w + b)||^2 / sigma^2
+    //       - n * log(sigma)
+    //       - 0.5 * ||w||^2
+    //       - 0.5 * b^2
+    //       - log(10 - 0.1)
+    // and grad = [dL/dw, dL/db, dL/dsigma].
+    auto derivative(Eigen::VectorXd& x, Eigen::VectorXd& grad) const -> double {
+      using Eigen::ArrayXd;
+      using Eigen::VectorXd;
 
-    // Use FastAD as reference
-    void derivative(Eigen::VectorXd& x,
-                    Eigen::VectorXd& grad) const
-    { 
-        grad.setZero();
-        ad::VarView<double, ad::vec> x_ad(x.data(), grad.data(), x.size());
-        auto expr = ad::bind(this->operator()(x_ad));
-        ad::autodiff(expr);
+      const Eigen::Index p = static_cast<Eigen::Index>(x.size() - 2);
+      Eigen::Map<const VectorXd> w(x.data(), p);
+      const double b = x[p];
+      const double sigma = x[p + 1];
+
+      // If you want safety, uncomment:
+      // CHECK_GT(sigma, 0.0) << "sigma must be positive";
+
+      // Residuals r = y - (X w + b).
+      const auto Xw = X * w;                  // assumes members X (m×p), y (m)
+      ArrayXd r = (y - Xw).array() - b;
+
+      // Scalars we'll reuse.
+      const double r2 = r.matrix().squaredNorm();
+      const Eigen::Index n = y.size();
+      const double inv_sigma = 1.0 / sigma;
+      const double inv_sigma2 = inv_sigma * inv_sigma;
+      const double inv_sigma3 = inv_sigma2 * inv_sigma;
+
+      // Value (same as your operator()).
+      double val = -0.5 * r2 * inv_sigma2
+                  - static_cast<double>(n) * std::log(sigma)
+                  - 0.5 * w.squaredNorm()
+                  - 0.5 * b * b
+                  - std::log(10.0 - 0.1);
+
+      // Gradient layout matches x = [w..., b, sigma].
+      grad.resize(x.size());
+      grad.setZero();
+
+      // dL/dw = (X^T r)/sigma^2 - w
+      grad.head(p).noalias() = X.transpose() * r.matrix();
+      grad.head(p) *= inv_sigma2;
+      grad.head(p) -= w;
+
+      // dL/db = sum(r)/sigma^2 - b
+      grad[p] = r.sum() * inv_sigma2 - b;
+
+      // dL/dsigma = ||r||^2 / sigma^3 - n / sigma
+      grad[p + 1] = r2 * inv_sigma3 - static_cast<double>(n) * inv_sigma;
+
+      return val;
     }
+
 
     std::string name() const { return "regression"; }
 

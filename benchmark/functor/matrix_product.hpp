@@ -18,7 +18,7 @@ struct MatrixProductFuncBase: FuncBase
         return (x1 * x2).array().sum();
     }
 
-    void derivative(const Eigen::VectorXd& x,
+    static auto derivative(const Eigen::VectorXd& x,
                     Eigen::VectorXd& grad) const 
     {
         size_t N = std::sqrt(x.size() / 2);
@@ -28,6 +28,7 @@ struct MatrixProductFuncBase: FuncBase
         Eigen::Map<Eigen::MatrixXd> dx2(grad.data() + x.size()/2, N, N);
         dx1 = Eigen::MatrixXd::Ones(N,N) * x2.transpose();
         dx2 = x1.transpose() * Eigen::MatrixXd::Ones(N,N);
+        return (x1 * x2).array().sum();
     }
 
     std::string name() const { return "matrix_product"; }
