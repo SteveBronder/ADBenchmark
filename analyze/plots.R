@@ -2,7 +2,7 @@ library(data.table)
 library(ggplot2)
 library(scales)
 library(patchwork)
-perf_files = list.files("./docs/data/benchmark_aggs", full.names = TRUE)
+perf_files = list.files("./docs/data/benchmarks2025_08_29_H11_M13_S06_e5d1981b9e32123a0b42fd70b7fb7fd1e67cab5d015b3de899cd4adc87f241e2/", full.names = TRUE, pattern = "*.csv")
 perf_lst = lapply(perf_files, \(x) {
   ret = fread(x)
   name_split = strsplit(basename(x), "_")[[1]]
@@ -70,7 +70,7 @@ for (graph_perf_name in perf_names) {
       y = "",
       color = "AD Library"
     ) +
-    ggtitle("Speedup Relative to Baseline") +
+    ggtitle("Slowdown Relative to Baseline") +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5))
   combined_plot = perf_plot +
@@ -80,8 +80,8 @@ for (graph_perf_name in perf_names) {
     plot_annotation(title = pretty_graph_name) +
     plot_layout(guides = "collect")
   print(combined_plot)
-  ggsave(plot = combined_plot, filename = paste0("./docs/figs/combined_", sub_perf_dt[, perf_name[1]],"_plot.png"),
-    width = 9, height = 5.5, dpi = 180, units = "in")
+#  ggsave(plot = combined_plot, filename = paste0("./docs/figs/combined_", sub_perf_dt[, perf_name[1]],"_plot.png"),
+#    width = 9, height = 5.5, dpi = 180, units = "in")
   readline("Press Enter to Continue")
 }
 
