@@ -48,32 +48,34 @@ __It is important to be inside `analyze` directory__.
 
 ## Benchmark Results
 
+The benchmarks here are listed in complexity. The simplest one is sum and the most difficult is the Stochastic Volatility Model
+
 ### Sum
-![](docs/figs/combined_sum_plot.png)
+![](docs/figs/figs_benchmarks2025_09_02_H12_M31_S34_05501bb21061f6073fb6ae79820f5e3efd94f6467a4fef329d7be3afeaeaadad/sum_plot.png)
 
 ### Sum (Iterative)
-![](docs/figs/combined_sum_iter_plot.png)
+![](docs/figs/figs_benchmarks2025_09_02_H12_M31_S34_05501bb21061f6073fb6ae79820f5e3efd94f6467a4fef329d7be3afeaeaadad/sum_iter_plot.png)
 
 ### Product
-![](docs/figs/combined_prod_plot.png)
+![](docs/figs/figs_benchmarks2025_09_02_H12_M31_S34_05501bb21061f6073fb6ae79820f5e3efd94f6467a4fef329d7be3afeaeaadad/prod_plot.png)
 
 ### Product (Iterative)
-![](docs/figs/combined_prod_iter_plot.png)
+![](docs/figs/figs_benchmarks2025_09_02_H12_M31_S34_05501bb21061f6073fb6ae79820f5e3efd94f6467a4fef329d7be3afeaeaadad/prod_iter_plot.png)
 
 ### Log-Sum-Exponential
-![](docs/figs/combined_log_sum_exp_plot.png)
+![](docs/figs/figs_benchmarks2025_09_02_H12_M31_S34_05501bb21061f6073fb6ae79820f5e3efd94f6467a4fef329d7be3afeaeaadad/log_sum_exp_plot.png)
 
 ### Matrix Product and Sum Elements
-![](docs/figs/combined_matrix_product_plot.png)
+![](docs/figs/figs_benchmarks2025_09_02_H12_M31_S34_05501bb21061f6073fb6ae79820f5e3efd94f6467a4fef329d7be3afeaeaadad/matrix_product_plot.png)
 
 ### Normal-Log-PDF
-![](docs/figs/combined_normal_log_pdf_plot.png)
+![](docs/figs/figs_benchmarks2025_09_02_H12_M31_S34_05501bb21061f6073fb6ae79820f5e3efd94f6467a4fef329d7be3afeaeaadad/normal_log_pdf_plot.png)
 
 ### Regression Model
-![](docs/figs/combined_regression_plot.png)
+![](docs/figs/figs_benchmarks2025_09_02_H12_M31_S34_05501bb21061f6073fb6ae79820f5e3efd94f6467a4fef329d7be3afeaeaadad/regression_plot.png)
 
 ### Stochastic Volatility Model
-![](docs/figs/combined_stochastic_volatility_plot.png)
+![](docs/figs/figs_benchmarks2025_09_02_H12_M31_S34_05501bb21061f6073fb6ae79820f5e3efd94f6467a4fef329d7be3afeaeaadad/stochastic_volatility_plot.png)
 
 ## NOTES
 

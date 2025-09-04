@@ -25,8 +25,8 @@ else:
 libs = ['fastad', 'stan', 'adept', 'baseline', 'cppad', 'sacado']
 
 # List of test names
-tests = ['log_sum_exp', 'matrix_product', 'normal_log_pdf', 'prod', 'prod_iter',
-          'regression', 'stochastic_volatility', 'sum', 'sum_iter']
+tests = ['regression', 'log_sum_exp', 'matrix_product', 'normal_log_pdf', 'prod', 'prod_iter',
+          'stochastic_volatility', 'sum', 'sum_iter']
 
 # Make plot font size bigger
 plt.rcParams["font.size"] = "12"
@@ -100,23 +100,23 @@ def parse_args():
 
 
 def main():
+  args = parse_args()
+  text, js = cpu_i.build_report(args)
+  encoded_text = text.encode('utf-8')
+  # Hash for performance report folder
+  base_file_name = args.file_base
+  if (base_file_name == ""):
+      base_file_name = hashlib.sha256(encoded_text).hexdigest()
+  print(text)
+  formatted_datetime = datetime.now().strftime("%Y_%m_%d_H%H_M%M_S%S")
+  multi_path = os.path.join(datapath, "benchmarks" + formatted_datetime + "_" + base_file_name)
+  # Make multi path folder if does not exist
+  if not os.path.exists(multi_path):
+      os.makedirs(multi_path)
+  # Write text to readme.md in multi_path
+  with open(os.path.join(multi_path, "README.md"), "w") as f:
+      f.write(text)
   for test in tests:
-    args = parse_args()
-    text, js = cpu_i.build_report(args)
-    encoded_text = text.encode('utf-8')
-    # Hash for performance report folder
-    base_file_name = args.file_base
-    if (base_file_name == ""):
-        base_file_name = hashlib.sha256(encoded_text).hexdigest()
-    print(text)
-    formatted_datetime = datetime.now().strftime("%Y_%m_%d_H%H_M%M_S%S")
-    multi_path = os.path.join(datapath, "benchmarks" + formatted_datetime + "_" + base_file_name)
-    # Make multi path folder if does not exist
-    if not os.path.exists(multi_path):
-        os.makedirs(multi_path)
-    # Write text to readme.md in multi_path
-    with open(os.path.join(multi_path, "README.md"), "w") as f:
-        f.write(text)
     run(test, multi_path, args)
 
 if __name__ == "__main__":
